@@ -1,4 +1,4 @@
-package metrics2
+package metrics20
 
 import (
 	"github.com/bmizerany/assert"
