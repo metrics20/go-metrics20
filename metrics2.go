@@ -10,7 +10,7 @@ import (
 
 // DeriveCount represents a derive from counter to rate per second
 func DeriveCount(metric_in, m1Prefix string) (metric_out string) {
-	if is_metric20(metric_in) {
+	if IsMetric20(metric_in) {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit=") || strings.HasPrefix(part, "unit_is_") {
@@ -28,7 +28,7 @@ func DeriveCount(metric_in, m1Prefix string) (metric_out string) {
 
 // Gauge doesn't really represent a change in data format, so for metrics 2.0 it doesn't change anything
 func Gauge(metric_in, m1Prefix string) (metric_out string) {
-	if is_metric20(metric_in) {
+	if IsMetric20(metric_in) {
 		return metric_in
 	}
 	return m1Prefix + metric_in
@@ -113,6 +113,7 @@ func CountPckt(metric_in, m1Prefix string) (metric_out string) {
 	}
 	return
 }
+
 // CountMetric reflects counting how many metrics were received
 func CountMetric(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
