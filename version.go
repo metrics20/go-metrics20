@@ -9,15 +9,15 @@ import (
 type metricVersion int
 
 const (
-	legacy      metricVersion = iota // bar.bytes or whatever
-	m20                              // foo=bar.unit=B
-	m20NoEquals                      // foo_is_bar.unit_is_B
+	Legacy      metricVersion = iota // bar.bytes or whatever
+	M20                              // foo=bar.unit=B
+	M20NoEquals                      // foo_is_bar.unit_is_B
 )
 
 func (version metricVersion) TagDelimiter() string {
-	if version == m20 {
+	if version == M20 {
 		return "="
-	} else if version == m20NoEquals {
+	} else if version == M20NoEquals {
 		return "_is_"
 	}
 	panic("TagDelimiter() called on metricVersion" + string(version))
@@ -26,17 +26,17 @@ func (version metricVersion) TagDelimiter() string {
 // getVersion returns the expected version of a metric, but doesn't validate
 func getVersion(metric_in string) metricVersion {
 	if strings.Contains(metric_in, "=") {
-		return m20
+		return M20
 	}
 	if strings.Contains(metric_in, "_is_") {
-		return m20NoEquals
+		return M20NoEquals
 	}
-	return legacy
+	return Legacy
 }
 
 func IsMetric20(metric_in string) bool {
 	v := getVersion(metric_in)
-	return v == m20 || v == m20NoEquals
+	return v == M20 || v == M20NoEquals
 }
 
 /*
@@ -60,14 +60,17 @@ func IsMetric20Buf(metric_in []byte) bool {
     return v == m20 || v == m20NoEquals
 }
 */
-
-// InitialValidation checks the basic form of metrics2.0 keys
+// InitialValidation checks the basic form of metric keys
 func InitialValidation(metric_id string, version metricVersion) error {
-	if version == legacy {
+	if version == Legacy {
 		// if the metric contains no = or _is_, we don't really care what it does contain.  it can be whatever.
+		// except for:
+		if strings.Contains(metric_id, "..") {
+			return fmt.Errorf("metric '%s' has an empty node", metric_id)
+		}
 		return nil
 	}
-	if version == m20 {
+	if version == M20 {
 		if strings.Contains(metric_id, "_is_") {
 			return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
 		}
@@ -77,7 +80,7 @@ func InitialValidation(metric_id string, version metricVersion) error {
 		if !strings.HasPrefix(metric_id, "target_type=") && !strings.Contains(metric_id, ".target_type=") {
 			return fmt.Errorf("metric '%s' has no target_type tag", metric_id)
 		}
-	} else { //version == m20NoEquals
+	} else { //version == M20NoEquals
 		if strings.Contains(metric_id, "=") {
 			return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
 		}

@@ -44,10 +44,10 @@ func simpleStat(metric_in, m1Prefix, stat1, stat2, percentile, timespec string) 
 		timespec = "__" + timespec
 	}
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		return metric_in + ".stat=" + stat2 + percentile + timespec
 	}
-	if v == m20NoEquals {
+	if v == M20NoEquals {
 		return metric_in + ".stat_is_" + stat2 + percentile + timespec
 	}
 	return m1Prefix + metric_in + "." + stat1 + percentile + timespec
@@ -80,7 +80,7 @@ func Std(metric_in, m1Prefix string, percentile, timespec string) (metric_out st
 // CountPckt reflects counting the amount of packets received for a given thing
 func CountPckt(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit=") {
@@ -94,7 +94,7 @@ func CountPckt(metric_in, m1Prefix string) (metric_out string) {
 		parts = append(parts, "pckt_type=sent")
 		parts = append(parts, "direction=in")
 		metric_out = strings.Join(parts, ".")
-	} else if v == m20NoEquals {
+	} else if v == M20NoEquals {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit_is_") {
@@ -117,7 +117,7 @@ func CountPckt(metric_in, m1Prefix string) (metric_out string) {
 // CountMetric reflects counting how many metrics were received
 func CountMetric(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit=") {
@@ -129,7 +129,7 @@ func CountMetric(metric_in, m1Prefix string) (metric_out string) {
 			}
 		}
 		metric_out = strings.Join(parts, ".")
-	} else if v == m20NoEquals {
+	} else if v == M20NoEquals {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit_is_") {
@@ -150,7 +150,7 @@ func CountMetric(metric_in, m1Prefix string) (metric_out string) {
 // Count just reflects counting something each interval, keeping the unit
 func Count(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		parts := strings.Split(metric_in, ".")
 		ttSeen := false
 		for i, part := range parts {
@@ -163,7 +163,7 @@ func Count(metric_in, m1Prefix string) (metric_out string) {
 			parts = append(parts, "target_type=count")
 		}
 		metric_out = strings.Join(parts, ".")
-	} else if v == m20NoEquals {
+	} else if v == M20NoEquals {
 		parts := strings.Split(metric_in, ".")
 		ttSeen := false
 		for i, part := range parts {
@@ -185,7 +185,7 @@ func Count(metric_in, m1Prefix string) (metric_out string) {
 // Counter just reflects counting something across time, keeping the unit
 func Counter(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		parts := strings.Split(metric_in, ".")
 		ttSeen := false
 		for i, part := range parts {
@@ -198,7 +198,7 @@ func Counter(metric_in, m1Prefix string) (metric_out string) {
 			parts = append(parts, "target_type=counter")
 		}
 		metric_out = strings.Join(parts, ".")
-	} else if v == m20NoEquals {
+	} else if v == M20NoEquals {
 		parts := strings.Split(metric_in, ".")
 		ttSeen := false
 		for i, part := range parts {
@@ -219,7 +219,7 @@ func Counter(metric_in, m1Prefix string) (metric_out string) {
 
 func RatePckt(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
-	if v == m20 {
+	if v == M20 {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit=") {
@@ -233,7 +233,7 @@ func RatePckt(metric_in, m1Prefix string) (metric_out string) {
 		parts = append(parts, "pckt_type=sent")
 		parts = append(parts, "direction=in")
 		metric_out = strings.Join(parts, ".")
-	} else if v == m20NoEquals {
+	} else if v == M20NoEquals {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
 			if strings.HasPrefix(part, "unit_is_") {
