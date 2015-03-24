@@ -152,29 +152,29 @@ func Count(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
 	if v == m20 {
 		parts := strings.Split(metric_in, ".")
-        ttSeen := false
+		ttSeen := false
 		for i, part := range parts {
 			if strings.HasPrefix(part, "target_type=") {
-                ttSeen = true
+				ttSeen = true
 				parts[i] = "target_type=count"
 			}
 		}
-        if !ttSeen {
-            parts = append(parts, "target_type=count")
-        }
+		if !ttSeen {
+			parts = append(parts, "target_type=count")
+		}
 		metric_out = strings.Join(parts, ".")
 	} else if v == m20NoEquals {
 		parts := strings.Split(metric_in, ".")
-        ttSeen := false
+		ttSeen := false
 		for i, part := range parts {
 			if strings.HasPrefix(part, "target_type_is_") {
-                ttSeen = true
+				ttSeen = true
 				parts[i] = "target_type_is_count"
 			}
 		}
-        if !ttSeen {
-            parts = append(parts, "target_type_is_count")
-        }
+		if !ttSeen {
+			parts = append(parts, "target_type_is_count")
+		}
 		metric_out = strings.Join(parts, ".")
 	} else {
 		metric_out = m1Prefix + metric_in + ".count"
@@ -187,29 +187,29 @@ func Counter(metric_in, m1Prefix string) (metric_out string) {
 	v := getVersion(metric_in)
 	if v == m20 {
 		parts := strings.Split(metric_in, ".")
-        ttSeen := false
+		ttSeen := false
 		for i, part := range parts {
 			if strings.HasPrefix(part, "target_type=") {
-                ttSeen = true
+				ttSeen = true
 				parts[i] = "target_type=counter"
 			}
 		}
-        if !ttSeen {
-            parts = append(parts, "target_type=counter")
-        }
+		if !ttSeen {
+			parts = append(parts, "target_type=counter")
+		}
 		metric_out = strings.Join(parts, ".")
 	} else if v == m20NoEquals {
 		parts := strings.Split(metric_in, ".")
-        ttSeen := false
+		ttSeen := false
 		for i, part := range parts {
 			if strings.HasPrefix(part, "target_type_is_") {
-                ttSeen = true
+				ttSeen = true
 				parts[i] = "target_type_is_counter"
 			}
 		}
-        if !ttSeen {
-            parts = append(parts, "target_type_is_counter")
-        }
+		if !ttSeen {
+			parts = append(parts, "target_type_is_counter")
+		}
 		metric_out = strings.Join(parts, ".")
 	} else {
 		metric_out = m1Prefix + metric_in + ".counter"
