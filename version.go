@@ -39,27 +39,6 @@ func IsMetric20(metric_in string) bool {
 	return v == M20 || v == M20NoEquals
 }
 
-/*
-not needed i think
-var equals1 = []byte("=")
-var equals2 = []byte("_is_")
-
-// getVersion returns the expected version of a metric, but doesn't validate
-func getVersionBuf(metric_in []byte) metricVersion {
-    if bytes.Contains(metric_in, equals1) {
-        return m20
-    }
-    if bytes.Contains(metric_in, equals2) {
-        return m20NoEquals
-    }
-    return legacy
-}
-
-func IsMetric20Buf(metric_in []byte) bool {
-    v := getVersionBuf(metric_in)
-    return v == m20 || v == m20NoEquals
-}
-*/
 // InitialValidation checks the basic form of metric keys
 func InitialValidation(metric_id string, version metricVersion) error {
 	if version == Legacy {
