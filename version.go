@@ -24,7 +24,7 @@ func (version metricVersion) TagDelimiter() string {
 }
 
 // getVersion returns the expected version of a metric, but doesn't validate
-func getVersion(metric_in string) metricVersion {
+func GetVersion(metric_in string) metricVersion {
 	if strings.Contains(metric_in, "=") {
 		return M20
 	}
@@ -84,7 +84,7 @@ type MetricSpec struct {
 // NewMetricSpec takes a metric key, validates it (unit tag, etc) and
 // converts it to a MetricSpec, setting nX tags, cleans up ps to /s unit
 func NewMetricSpec(id string) (metric *MetricSpec, err error) {
-	version := getVersion(id)
+	version := GetVersion(id)
 	err = InitialValidation(id, version)
 	if err != nil {
 		return nil, err
