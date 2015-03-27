@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -59,7 +60,7 @@ func IsMetric20(metric_in string) bool {
 // the weirdest things with all kinds of special characters.
 func ValidateSensibleChars(metric_id string) error {
 	for _, ch := range metric_id {
-		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && ch != '_' && ch != '-' && ch != '.' {
+		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
 			return fmt.Errorf("metric '%s' contains illegal char '%s'", metric_id, string(ch))
 		}
 	}
@@ -69,7 +70,7 @@ func ValidateSensibleChars(metric_id string) error {
 // ValidateSensibleCharsB is like ValidateSensibleChars but for byte array inputs.
 func ValidateSensibleCharsB(metric_id []byte) error {
 	for _, ch := range metric_id {
-		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && ch != '_' && ch != '-' && ch != '.' {
+		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
 			return fmt.Errorf("metric '%s' contains illegal char '%s'", string(metric_id), string(ch))
 		}
 	}
@@ -162,6 +163,35 @@ func InitialValidationB(metric_id []byte, version metricVersion) error {
 	if bytes.Count(metric_id, dot) < 2 {
 		return fmt.Errorf("metric '%s': must have at least one tag_k/tag_v pair beyond unit and target_type", metric_id)
 	}
+	return nil
+}
+
+var space = []byte(" ")
+
+// ValidatePacket validates a carbon message.
+func ValidatePacket(buf []byte) error {
+	fields := bytes.Fields(buf)
+	if len(fields) != 3 {
+		return errors.New("packet must consist of 3 fields")
+
+	}
+
+	version := GetVersionB(fields[0])
+    err := InitialValidationB(fields[0], version)
+    if err != nil {
+        return err
+    }
+
+	_, err = strconv.ParseFloat(string(fields[1]), 32)
+	if err != nil {
+		return errors.New("value field is not a float or int")
+	}
+
+	_, err = strconv.ParseUint(string(fields[2]), 10, 0)
+	if err != nil {
+		return errors.New("timestamp field is not a unix timestamp")
+	}
+
 	return nil
 }
 
