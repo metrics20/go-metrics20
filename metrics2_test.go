@@ -80,7 +80,7 @@ func TestDeriveCount(t *testing.T) {
 		Case{"target_type=count.foo.unit=ok.bar", "target_type=rate.foo.unit=okps.bar"},
 	}
 	for _, c := range cases {
-		assert.Equal(t, DeriveCount(c.in, "prefix."), c.out)
+		assert.Equal(t, DeriveCount(c.in, "prefix.", false), c.out)
 	}
 
 	// same but with equals
@@ -91,7 +91,7 @@ func TestDeriveCount(t *testing.T) {
 		}
 	}
 	for _, c := range cases {
-		assert.Equal(t, DeriveCount(c.in, "prefix."), c.out)
+		assert.Equal(t, DeriveCount(c.in, "prefix.", false), c.out)
 	}
 }
 
@@ -146,12 +146,12 @@ func TestRateCountPckt(t *testing.T) {
 	}
 }
 
-func BenchmarkManyDeriveCounts(t *testing.B) {
-	for i := 0; i < 1000000; i++ {
-		DeriveCount("foo.bar.unit=yes.baz", "prefix.")
-		DeriveCount("foo.bar.unit=yes", "prefix.")
-		DeriveCount("unit=yes.foo.bar", "prefix.")
-		DeriveCount("foo.bar.unita=no.bar", "prefix.")
-		DeriveCount("foo.bar.aunit=no.baz", "prefix.")
+func Benchmark5DeriveCounts(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		DeriveCount("foo.bar.unit=yes.baz", "prefix.", false)
+		DeriveCount("foo.bar.unit=yes", "prefix.", false)
+		DeriveCount("unit=yes.foo.bar", "prefix.", false)
+		DeriveCount("foo.bar.unita=no.bar", "prefix.", false)
+		DeriveCount("foo.bar.aunit=no.baz", "prefix.", false)
 	}
 }

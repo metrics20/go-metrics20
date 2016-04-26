@@ -9,7 +9,7 @@ import (
 )
 
 // DeriveCount represents a derive from counter to rate per second
-func DeriveCount(metric_in, m1Prefix string) (metric_out string) {
+func DeriveCount(metric_in, m1Prefix string, m1Legacy bool) (metric_out string) {
 	if IsMetric20(metric_in) {
 		parts := strings.Split(metric_in, ".")
 		for i, part := range parts {
@@ -20,10 +20,12 @@ func DeriveCount(metric_in, m1Prefix string) (metric_out string) {
 		metric_out = strings.Join(parts, ".")
 		metric_out = strings.Replace(metric_out, "target_type=count", "target_type=rate", 1)
 		metric_out = strings.Replace(metric_out, "target_type_is_count", "target_type_is_rate", 1)
-	} else {
-		metric_out = m1Prefix + metric_in
+		return
 	}
-	return
+	if m1Legacy {
+		return m1Prefix + metric_in
+	}
+	return m1Prefix + metric_in + ".rate"
 }
 
 // Gauge doesn't really represent a change in data format, so for metrics 2.0 it doesn't change anything
@@ -148,7 +150,7 @@ func CountMetric(metric_in, m1Prefix string) (metric_out string) {
 }
 
 // Count just reflects counting something each interval, keeping the unit
-func Count(metric_in, m1Prefix string) (metric_out string) {
+func Count(metric_in, m1Prefix string, m1Legacy bool) (metric_out string) {
 	v := GetVersion(metric_in)
 	if v == M20 {
 		parts := strings.Split(metric_in, ".")
@@ -176,6 +178,8 @@ func Count(metric_in, m1Prefix string) (metric_out string) {
 			parts = append(parts, "target_type_is_count")
 		}
 		metric_out = strings.Join(parts, ".")
+	} else if m1Legacy {
+		metric_out = m1Prefix + metric_in
 	} else {
 		metric_out = m1Prefix + metric_in + ".count"
 	}
