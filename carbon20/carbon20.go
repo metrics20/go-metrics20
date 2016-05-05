@@ -1,8 +1,8 @@
-// Package metrics20 provides functions that manipulate a metric string to represent a given operation
+// Package carbon20 provides functions that manipulate a metric string to represent a given operation
 // if the metric is detected to be in metrics 2.0 format, the change
 // will be in that style, if not, it will be a simple string prefix/postfix
 // like legacy statsd.
-package metrics20
+package carbon20
 
 import (
 	"strings"

@@ -1,4 +1,4 @@
-package metrics20
+package carbon20
 
 import (
 	"github.com/bmizerany/assert"
