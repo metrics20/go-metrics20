@@ -45,16 +45,18 @@ func GetVersion(metric_in string) metricVersion {
 	return Legacy
 }
 
-var byteEquals = []byte("=")
-var byteIs = []byte("_is_")
-
 // getVersionB is like getVersion but for byte array input.
 func GetVersionB(metric_in []byte) metricVersion {
-	if bytes.Contains(metric_in, byteEquals) {
-		return M20
-	}
-	if bytes.Contains(metric_in, byteIs) {
-		return M20NoEquals
+	for i, c := range metric_in {
+		if c == 61 { // =
+			return M20
+		} else if c == 95 { // _ -> look for _is_
+			if len(metric_in) > i+3 && metric_in[i+1] == 105 && metric_in[i+2] == 115 && metric_in[i+3] == 95 {
+				return M20NoEquals
+			}
+		} else if c == 46 { // .
+			return Legacy
+		}
 	}
 	return Legacy
 }
