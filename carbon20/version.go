@@ -199,35 +199,8 @@ func InitialValidationB(metric_id []byte, version metricVersion, legacyValidatio
 var space = []byte(" ")
 var empty = []byte("")
 
-// ValidatePacket validates a carbon message.
-func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) error {
-	fields := bytes.Fields(buf)
-	if len(fields) != 3 {
-		return errors.New("packet must consist of 3 fields")
-
-	}
-
-	version := GetVersionB(fields[0])
-	err := InitialValidationB(fields[0], version, legacyValidation)
-	if err != nil {
-		return err
-	}
-
-	_, err = strconv.ParseFloat(string(fields[1]), 32)
-	if err != nil {
-		return errors.New("value field is not a float or int")
-	}
-
-	_, err = strconv.ParseUint(string(fields[2]), 10, 0)
-	if err != nil {
-		return errors.New("timestamp field is not a unix timestamp")
-	}
-
-	return nil
-}
-
 // ValidatePacket validates a carbon message and returns useful pieces of it
-func ValidatePacketRet(buf []byte, legacyValidation LegacyMetricValidation) ([]byte, float64, uint32, error) {
+func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte, float64, uint32, error) {
 	fields := bytes.Fields(buf)
 	if len(fields) != 3 {
 		return empty, 0, 0, errors.New("packet must consist of 3 fields")
