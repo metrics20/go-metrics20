@@ -10,6 +10,12 @@ import (
 
 type metricVersion int
 
+var errTooManyEquals = errors.New("bad metric spec: more than 1 equals")
+var errKeyOrValEmpty = errors.New("bad metric spec: tag_k and tag_v must be non-empty strings")
+var errWrongNumFields = errors.New("packet must consist of 3 fields")
+var errValNotNumber = errors.New("value field is not a float or int")
+var errTsNotTs = errors.New("timestamp field is not a unix timestamp")
+
 const (
 	Legacy      metricVersion = iota // bar.bytes or whatever
 	M20                              // foo=bar.unit=B
@@ -203,7 +209,7 @@ var empty = []byte("")
 func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte, float64, uint32, error) {
 	fields := bytes.Fields(buf)
 	if len(fields) != 3 {
-		return empty, 0, 0, errors.New("packet must consist of 3 fields")
+		return empty, 0, 0, errWrongNumFields
 	}
 
 	version := GetVersionB(fields[0])
@@ -214,12 +220,12 @@ func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte
 
 	val, err := strconv.ParseFloat(string(fields[1]), 32)
 	if err != nil {
-		return empty, 0, 0, errors.New("value field is not a float or int")
+		return empty, 0, 0, errValNotNumber
 	}
 
 	ts, err := strconv.ParseUint(string(fields[2]), 10, 0)
 	if err != nil {
-		return empty, 0, 0, errors.New("timestamp field is not a unix timestamp")
+		return empty, 0, 0, errTsNotTs
 	}
 
 	return fields[0], val, uint32(ts), nil
@@ -244,11 +250,11 @@ func NewMetricSpec(id string) (metric *MetricSpec, err error) {
 	for i, node := range nodes {
 		tag := strings.Split(node, del)
 		if len(tag) > 2 {
-			return nil, errors.New("bad metric spec: more than 1 equals")
+			return nil, errTooManyEquals
 		} else if len(tag) < 2 {
 			tags[fmt.Sprintf("n%d", i+1)] = node
 		} else if tag[0] == "" || tag[1] == "" {
-			return nil, errors.New("bad metric spec: tag_k and tag_v must be non-empty strings")
+			return nil, errKeyOrValEmpty
 		} else {
 			// k=v format, and both are != ""
 			key := tag[0]
