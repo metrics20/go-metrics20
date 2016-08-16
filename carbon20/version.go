@@ -23,6 +23,7 @@ const (
 )
 
 // LegacyMetricValidation indicates the level of validation to undertake for legacy metrics
+//go:generate stringer -type=LegacyMetricValidation
 type LegacyMetricValidation int
 
 const (
