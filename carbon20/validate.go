@@ -33,10 +33,12 @@ const (
 	None                                // No validation
 )
 
-// ValidateSensibleChars checks that the metric id only contains characters that
+// helper functions
+
+// validateSensibleChars checks that the metric id only contains characters that
 // are commonly understood to be sensible and useful.  Because Graphite will do
 // the weirdest things with all kinds of special characters.
-func ValidateSensibleChars(metric_id string) error {
+func validateSensibleChars(metric_id string) error {
 	for _, ch := range metric_id {
 		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
 			return fmt.Errorf(errFmtIllegalChar, ch)
@@ -45,8 +47,8 @@ func ValidateSensibleChars(metric_id string) error {
 	return nil
 }
 
-// ValidateSensibleCharsB is like ValidateSensibleChars but for byte array inputs.
-func ValidateSensibleCharsB(metric_id []byte) error {
+// validateSensibleCharsB is like ValidateSensibleChars but for byte array inputs.
+func validateSensibleCharsB(metric_id []byte) error {
 	for _, ch := range metric_id {
 		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
 			return fmt.Errorf(errFmtIllegalChar, ch)
@@ -69,6 +71,8 @@ func validateNotNullAsciiChars(metric_id []byte) error {
 	return nil
 }
 
+// public functions
+
 // ValidateKey checks the basic form of metric keys
 func ValidateKeyLegacy(metric_id string, level ValidationLevelLegacy) error {
 	if level == Strict {
@@ -77,7 +81,7 @@ func ValidateKeyLegacy(metric_id string, level ValidationLevelLegacy) error {
 		if strings.Contains(metric_id, "..") {
 			return errEmptyNode
 		}
-		return ValidateSensibleChars(metric_id)
+		return validateSensibleChars(metric_id)
 
 	} else if level == Medium {
 		return validateNotNullAsciiChars([]byte(metric_id))
@@ -138,7 +142,7 @@ func ValidateKeyLegacyB(metric_id []byte, level ValidationLevelLegacy) error {
 		if bytes.Contains(metric_id, doubleDot) {
 			return errEmptyNode
 		}
-		return ValidateSensibleCharsB(metric_id)
+		return validateSensibleCharsB(metric_id)
 	} else if level == Medium {
 		return validateNotNullAsciiChars(metric_id)
 	}
