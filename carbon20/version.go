@@ -32,15 +32,6 @@ const (
 	None                                 // No validation
 )
 
-func (version metricVersion) TagDelimiter() string {
-	if version == M20 {
-		return "="
-	} else if version == M20NoEquals {
-		return "_is_"
-	}
-	panic("TagDelimiter() called on metricVersion" + string(version))
-}
-
 // getVersion returns the expected version of a metric, but doesn't validate
 func GetVersion(metric_in string) metricVersion {
 	if strings.Contains(metric_in, "=") {
@@ -230,58 +221,4 @@ func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte
 	}
 
 	return fields[0], val, uint32(ts), nil
-}
-
-type MetricSpec struct {
-	Id   string
-	Tags map[string]string
-}
-
-// NewMetricSpec takes a metric key, validates it (unit tag, etc) and
-// converts it to a MetricSpec, setting nX tags, cleans up ps to /s unit
-func NewMetricSpec(id string) (metric *MetricSpec, err error) {
-	version := GetVersion(id)
-	err = InitialValidation(id, version)
-	if err != nil {
-		return nil, err
-	}
-	nodes := strings.Split(id, ".")
-	del := version.TagDelimiter()
-	tags := make(map[string]string)
-	for i, node := range nodes {
-		tag := strings.Split(node, del)
-		if len(tag) > 2 {
-			return nil, errTooManyEquals
-		} else if len(tag) < 2 {
-			tags[fmt.Sprintf("n%d", i+1)] = node
-		} else if tag[0] == "" || tag[1] == "" {
-			return nil, errKeyOrValEmpty
-		} else {
-			// k=v format, and both are != ""
-			key := tag[0]
-			val := tag[1]
-			if _, ok := tags[key]; ok {
-				return nil, fmt.Errorf("duplicate tag key '%s'", key)
-			}
-			if key == "unit" && strings.HasSuffix(val, "ps") {
-				val = val[:len(val)-2] + "/s"
-			}
-			tags[key] = val
-		}
-	}
-	return &MetricSpec{id, tags}, nil
-}
-
-type MetricEs struct {
-	Tags []string `json:"tags"`
-}
-
-func NewMetricEs(spec MetricSpec) MetricEs {
-	tags := make([]string, len(spec.Tags), len(spec.Tags))
-	i := 0
-	for tag_key, tag_val := range spec.Tags {
-		tags[i] = fmt.Sprintf("%s=%s", tag_key, tag_val)
-		i++
-	}
-	return MetricEs{tags}
 }
