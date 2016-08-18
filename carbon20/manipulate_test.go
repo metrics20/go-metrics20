@@ -6,66 +6,6 @@ import (
 	"testing"
 )
 
-type VersionCase struct {
-	in      string
-	version metricVersion
-	valid   bool
-}
-
-func TestValidate(t *testing.T) {
-	cases := []VersionCase{
-		VersionCase{"foo.bar.aunit=no.baz", M20, false},
-		VersionCase{"foo.bar.UNIT=no.baz", M20, false},
-		VersionCase{"foo.bar.unita=no.bar", M20, false},
-		VersionCase{"foo.bar.mtype_is_count.baz", M20NoEquals, false},
-		VersionCase{"foo.bar.mtype_is_count", M20NoEquals, false},
-		VersionCase{"mtype_is_count.foo.bar", M20NoEquals, false},
-	}
-	for _, c := range cases {
-		version := GetVersion(c.in)
-		assert.Equal(t, c.version, version)
-		assert.Equal(t, ValidateKey(c.in, version) == nil, c.valid)
-	}
-}
-
-type VersionCaseB struct {
-	in               string
-	version          metricVersion
-	legacyValidation LegacyMetricValidation
-	valid            bool
-}
-
-func TestByteValidation(t *testing.T) {
-	cases := []VersionCaseB{
-		VersionCaseB{"foo.bar", Legacy, Strict, true},
-		VersionCaseB{"foo.bar", Legacy, Medium, true},
-		VersionCaseB{"foo.bar", Legacy, None, true},
-		VersionCaseB{"foo..bar", Legacy, Strict, false},
-		VersionCaseB{"foo..bar", Legacy, Medium, true},
-		VersionCaseB{"foo..bar", Legacy, None, true},
-		VersionCaseB{"foo..bar.ba::z", Legacy, Strict, false},
-		VersionCaseB{"foo..bar.ba::z", Legacy, Medium, true},
-		VersionCaseB{"foo..bar.ba::z", Legacy, None, true},
-		VersionCaseB{"foo..bar.b\xbdz", Legacy, Strict, false},
-		VersionCaseB{"foo..bar.b\xbdz", Legacy, Medium, false},
-		VersionCaseB{"foo..bar.b\xbdz", Legacy, None, true},
-		VersionCaseB{"foo..bar.b\x00z", Legacy, Strict, false},
-		VersionCaseB{"foo..bar.b\x00z", Legacy, Medium, false},
-		VersionCaseB{"foo..bar.b\x00z", Legacy, None, true},
-		VersionCaseB{"foo.bar.aunit=no.baz", M20, Strict, false},
-		VersionCaseB{"foo.bar.UNIT=no.baz", M20, Strict, false},
-		VersionCaseB{"foo.bar.unita=no.bar", M20, None, false},
-		VersionCaseB{"foo.bar.mtype_is_count.baz", M20NoEquals, Medium, false},
-		VersionCaseB{"foo.bar.mtype_is_count", M20NoEquals, None, false},
-		VersionCaseB{"mtype_is_count.foo.bar", M20NoEquals, Strict, false},
-	}
-	for _, c := range cases {
-		version := GetVersion(c.in)
-		assert.Equal(t, c.version, version)
-		assert.Equal(t, ValidateKeyB([]byte(c.in), version, c.legacyValidation) == nil, c.valid)
-	}
-}
-
 type Case struct {
 	in  string
 	out string

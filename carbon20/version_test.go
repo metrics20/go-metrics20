@@ -2,7 +2,42 @@ package carbon20
 
 import (
 	"testing"
+
+	"github.com/bmizerany/assert"
 )
+
+func TestValidate(t *testing.T) {
+	cases := []struct {
+		in      string
+		version metricVersion
+	}{
+		{"foo.bar", Legacy},
+		{"foo.bar", Legacy},
+		{"foo.bar", Legacy},
+		{"foo..bar", Legacy},
+		{"foo..bar", Legacy},
+		{"foo..bar", Legacy},
+		{"foo..bar.ba::z", Legacy},
+		{"foo..bar.ba::z", Legacy},
+		{"foo..bar.ba::z", Legacy},
+		{"foo..bar.b\xbdz", Legacy},
+		{"foo..bar.b\xbdz", Legacy},
+		{"foo..bar.b\xbdz", Legacy},
+		{"foo..bar.b\x00z", Legacy},
+		{"foo..bar.b\x00z", Legacy},
+		{"foo..bar.b\x00z", Legacy},
+		{"foo.bar.aunit=no.baz", M20},
+		{"foo.bar.UNIT=no.baz", M20},
+		{"foo.bar.unita=no.bar", M20},
+		{"foo.bar.mtype_is_count.baz", M20NoEquals},
+		{"foo.bar.mtype_is_count", M20NoEquals},
+		{"mtype_is_count.foo.bar", M20NoEquals},
+	}
+	for _, c := range cases {
+		version := GetVersion(c.in)
+		assert.Equal(t, c.version, version)
+	}
+}
 
 func TestGetVersionB(t *testing.T) {
 	cases := []struct {

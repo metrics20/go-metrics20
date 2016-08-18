@@ -23,14 +23,14 @@ var errFmtNullAt = "null byte at position %d"
 var errFmtIllegalChar = "illegal char %q"
 var errFmtNonAsciiChar = "non-ASCII char %q"
 
-// LegacyMetricValidation indicates the level of validation to undertake for legacy metrics
-//go:generate stringer -type=LegacyMetricValidation
-type LegacyMetricValidation int
+// ValidationLevelLegacy indicates the level of validation to undertake for legacy metrics
+//go:generate stringer -type=ValidationLevelLegacy
+type ValidationLevelLegacy int
 
 const (
-	Strict LegacyMetricValidation = iota // Sensible character validation and no consecutive dots
-	Medium                               // Ensure characters are 8-bit clean and not NULL
-	None                                 // No validation
+	Strict ValidationLevelLegacy = iota // Sensible character validation and no consecutive dots
+	Medium                              // Ensure characters are 8-bit clean and not NULL
+	None                                // No validation
 )
 
 // ValidateSensibleChars checks that the metric id only contains characters that
@@ -70,13 +70,19 @@ func validateNotNullAsciiChars(metric_id []byte) error {
 }
 
 // ValidateKey checks the basic form of metric keys
-func ValidateKeyLegacy(metric_id string) error {
-	// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
-	// in practice, graphite alters (removes a dot) the metric id when this happens:
-	if strings.Contains(metric_id, "..") {
-		return errEmptyNode
+func ValidateKeyLegacy(metric_id string, level ValidationLevelLegacy) error {
+	if level == Strict {
+		// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
+		// in practice, graphite alters (removes a dot) the metric id when this happens:
+		if strings.Contains(metric_id, "..") {
+			return errEmptyNode
+		}
+		return ValidateSensibleChars(metric_id)
+
+	} else if level == Medium {
+		return validateNotNullAsciiChars([]byte(metric_id))
 	}
-	return ValidateSensibleChars(metric_id)
+	return nil
 }
 func ValidateKeyM20(metric_id string) error {
 	if strings.Contains(metric_id, "_is_") {
@@ -127,13 +133,13 @@ var (
 )
 
 // ValidateKeyB is like ValidateKey but for byte array inputs.
-func ValidateKeyLegacyB(metric_id []byte, legacyValidation LegacyMetricValidation) error {
-	if legacyValidation == Strict {
+func ValidateKeyLegacyB(metric_id []byte, level ValidationLevelLegacy) error {
+	if level == Strict {
 		if bytes.Contains(metric_id, doubleDot) {
 			return errEmptyNode
 		}
 		return ValidateSensibleCharsB(metric_id)
-	} else if legacyValidation == Medium {
+	} else if level == Medium {
 		return validateNotNullAsciiChars(metric_id)
 	}
 	return nil
@@ -173,7 +179,7 @@ var space = []byte(" ")
 var empty = []byte("")
 
 // ValidatePacket validates a carbon message and returns useful pieces of it
-func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte, float64, uint32, error) {
+func ValidatePacket(buf []byte, level ValidationLevelLegacy) ([]byte, float64, uint32, error) {
 	fields := bytes.Fields(buf)
 	if len(fields) != 3 {
 		return empty, 0, 0, errWrongNumFields
@@ -182,7 +188,7 @@ func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte
 	version := GetVersionB(fields[0])
 	var err error
 	if version == Legacy {
-		err = ValidateKeyLegacyB(fields[0], legacyValidation)
+		err = ValidateKeyLegacyB(fields[0], level)
 	} else if version == M20 {
 		err = ValidateKeyM20B(fields[0])
 	} else { // version == M20NoEquals
