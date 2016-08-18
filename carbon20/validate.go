@@ -33,7 +33,7 @@ const (
 	None                                 // No validation
 )
 
-// ValidateSensibleChars checks that the metric id onlay contains characters that
+// ValidateSensibleChars checks that the metric id only contains characters that
 // are commonly understood to be sensible and useful.  Because Graphite will do
 // the weirdest things with all kinds of special characters.
 func ValidateSensibleChars(metric_id string) error {
