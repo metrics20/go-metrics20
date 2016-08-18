@@ -4,9 +4,9 @@ package carbon20
 
 import "fmt"
 
-const _ValidationLevelLegacy_name = "StrictMediumNone"
+const _ValidationLevelLegacy_name = "StrictLegacyMediumLegacyNoneLegacy"
 
-var _ValidationLevelLegacy_index = [...]uint8{0, 6, 12, 16}
+var _ValidationLevelLegacy_index = [...]uint8{0, 12, 24, 34}
 
 func (i ValidationLevelLegacy) String() string {
 	if i < 0 || i >= ValidationLevelLegacy(len(_ValidationLevelLegacy_index)-1) {
