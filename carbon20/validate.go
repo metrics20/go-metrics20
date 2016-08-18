@@ -28,9 +28,19 @@ var errFmtNonAsciiChar = "non-ASCII char %q"
 type ValidationLevelLegacy int
 
 const (
-	Strict ValidationLevelLegacy = iota // Sensible character validation and no consecutive dots
-	Medium                              // Ensure characters are 8-bit clean and not NULL
-	None                                // No validation
+	StrictLegacy ValidationLevelLegacy = iota // Sensible character validation and no consecutive dots
+	MediumLegacy                              // Ensure characters are 8-bit clean and not NULL
+	NoneLegacy                                // No validation
+)
+
+// ValidationLevelM20 indicates validation level for both M20 and M20NoEquals types
+//go:generate stringer -type=ValidationLevelM20
+type ValidationLevelM20 int
+
+const (
+	StrictM20 ValidationLevelM20 = iota // not implemented. reserved for if a nead appears
+	MediumM20                           // unit, mtype tag set. no mixing of = and _is_ styles. at least two tags.
+	NoneM20
 )
 
 // helper functions
@@ -75,7 +85,7 @@ func validateNotNullAsciiChars(metric_id []byte) error {
 
 // ValidateKey checks the basic form of metric keys
 func ValidateKeyLegacy(metric_id string, level ValidationLevelLegacy) error {
-	if level == Strict {
+	if level == StrictLegacy {
 		// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
 		// in practice, graphite alters (removes a dot) the metric id when this happens:
 		if strings.Contains(metric_id, "..") {
@@ -83,12 +93,15 @@ func ValidateKeyLegacy(metric_id string, level ValidationLevelLegacy) error {
 		}
 		return validateSensibleChars(metric_id)
 
-	} else if level == Medium {
+	} else if level == MediumLegacy {
 		return validateNotNullAsciiChars([]byte(metric_id))
 	}
 	return nil
 }
-func ValidateKeyM20(metric_id string) error {
+func ValidateKeyM20(metric_id string, level ValidationLevelM20) error {
+	if level == NoneM20 {
+		return nil
+	}
 	if strings.Contains(metric_id, "_is_") {
 		return errMixEqualsTypes
 	}
@@ -103,7 +116,10 @@ func ValidateKeyM20(metric_id string) error {
 	}
 	return nil
 }
-func ValidateKeyM20NoEquals(metric_id string) error {
+func ValidateKeyM20NoEquals(metric_id string, level ValidationLevelM20) error {
+	if level == NoneM20 {
+		return nil
+	}
 	if strings.Contains(metric_id, "=") {
 		return errMixEqualsTypes
 	}
@@ -138,17 +154,20 @@ var (
 
 // ValidateKeyB is like ValidateKey but for byte array inputs.
 func ValidateKeyLegacyB(metric_id []byte, level ValidationLevelLegacy) error {
-	if level == Strict {
+	if level == StrictLegacy {
 		if bytes.Contains(metric_id, doubleDot) {
 			return errEmptyNode
 		}
 		return validateSensibleCharsB(metric_id)
-	} else if level == Medium {
+	} else if level == MediumLegacy {
 		return validateNotNullAsciiChars(metric_id)
 	}
 	return nil
 }
-func ValidateKeyM20B(metric_id []byte) error {
+func ValidateKeyM20B(metric_id []byte, level ValidationLevelM20) error {
+	if level == NoneM20 {
+		return nil
+	}
 	if bytes.Contains(metric_id, m20Is) {
 		return errMixEqualsTypes
 	}
@@ -163,7 +182,10 @@ func ValidateKeyM20B(metric_id []byte) error {
 	}
 	return nil
 }
-func ValidateKeyM20NoEqualsB(metric_id []byte) error {
+func ValidateKeyM20NoEqualsB(metric_id []byte, level ValidationLevelM20) error {
+	if level == NoneM20 {
+		return nil
+	}
 	if bytes.Contains(metric_id, m20NEIS) {
 		return errMixEqualsTypes
 	}
@@ -183,7 +205,7 @@ var space = []byte(" ")
 var empty = []byte("")
 
 // ValidatePacket validates a carbon message and returns useful pieces of it
-func ValidatePacket(buf []byte, level ValidationLevelLegacy) ([]byte, float64, uint32, error) {
+func ValidatePacket(buf []byte, levelLegacy ValidationLevelLegacy, levelM20 ValidationLevelM20) ([]byte, float64, uint32, error) {
 	fields := bytes.Fields(buf)
 	if len(fields) != 3 {
 		return empty, 0, 0, errWrongNumFields
@@ -192,11 +214,11 @@ func ValidatePacket(buf []byte, level ValidationLevelLegacy) ([]byte, float64, u
 	version := GetVersionB(fields[0])
 	var err error
 	if version == Legacy {
-		err = ValidateKeyLegacyB(fields[0], level)
+		err = ValidateKeyLegacyB(fields[0], levelLegacy)
 	} else if version == M20 {
-		err = ValidateKeyM20B(fields[0])
+		err = ValidateKeyM20B(fields[0], levelM20)
 	} else { // version == M20NoEquals
-		err = ValidateKeyM20NoEqualsB(fields[0])
+		err = ValidateKeyM20NoEqualsB(fields[0], levelM20)
 	}
 	if err != nil {
 		return empty, 0, 0, err
