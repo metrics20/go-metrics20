@@ -69,8 +69,8 @@ func validateNotNullAsciiChars(metric_id []byte) error {
 	return nil
 }
 
-// InitialValidation checks the basic form of metric keys
-func InitialValidation(metric_id string, version metricVersion) error {
+// ValidateKey checks the basic form of metric keys
+func ValidateKey(metric_id string, version metricVersion) error {
 	if version == Legacy {
 		// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
 		// in practice, graphite alters (removes a dot) the metric id when this happens:
@@ -123,8 +123,8 @@ var (
 	dot          = []byte(".")
 )
 
-// InitialValidationB is like InitialValidation but for byte array inputs.
-func InitialValidationB(metric_id []byte, version metricVersion, legacyValidation LegacyMetricValidation) error {
+// ValidateKeyB is like ValidateKey but for byte array inputs.
+func ValidateKeyB(metric_id []byte, version metricVersion, legacyValidation LegacyMetricValidation) error {
 	if version == Legacy {
 		if legacyValidation == Strict {
 			if bytes.Contains(metric_id, doubleDot) {
@@ -174,7 +174,7 @@ func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte
 	}
 
 	version := GetVersionB(fields[0])
-	err := InitialValidationB(fields[0], version, legacyValidation)
+	err := ValidateKeyB(fields[0], version, legacyValidation)
 	if err != nil {
 		return empty, 0, 0, err
 	}

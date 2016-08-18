@@ -24,7 +24,7 @@ func TestValidate(t *testing.T) {
 	for _, c := range cases {
 		version := GetVersion(c.in)
 		assert.Equal(t, c.version, version)
-		assert.Equal(t, InitialValidation(c.in, version) == nil, c.valid)
+		assert.Equal(t, ValidateKey(c.in, version) == nil, c.valid)
 	}
 }
 
@@ -62,7 +62,7 @@ func TestByteValidation(t *testing.T) {
 	for _, c := range cases {
 		version := GetVersion(c.in)
 		assert.Equal(t, c.version, version)
-		assert.Equal(t, InitialValidationB([]byte(c.in), version, c.legacyValidation) == nil, c.valid)
+		assert.Equal(t, ValidateKeyB([]byte(c.in), version, c.legacyValidation) == nil, c.valid)
 	}
 }
 
