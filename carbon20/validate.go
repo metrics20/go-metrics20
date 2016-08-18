@@ -16,8 +16,8 @@ var errTsNotTs = errors.New("timestamp field is not a unix timestamp")
 var errEmptyNode = errors.New("empty node")
 var errMixEqualsTypes = errors.New("both = and _is_")
 var errNoUnit = errors.New("no unit tag")
-var errNoTargetType = errors.New("no target_type tag")
-var errNotEnoughTags = errors.New("must have at least 1 tag beyond unit and target_type")
+var errNoMType = errors.New("no mtype tag")
+var errNotEnoughTags = errors.New("must have at least 1 tag beyond unit and mtype")
 
 var errFmtNullAt = "null byte at position %d"
 var errFmtIllegalChar = "illegal char %q"
@@ -86,8 +86,8 @@ func ValidateKey(metric_id string, version metricVersion) error {
 		if !strings.HasPrefix(metric_id, "unit=") && !strings.Contains(metric_id, ".unit=") {
 			return errNoUnit
 		}
-		if !strings.HasPrefix(metric_id, "target_type=") && !strings.Contains(metric_id, ".target_type=") {
-			return errNoTargetType
+		if !strings.HasPrefix(metric_id, "mtype=") && !strings.Contains(metric_id, ".mtype=") {
+			return errNoMType
 		}
 	} else { //version == M20NoEquals
 		if strings.Contains(metric_id, "=") {
@@ -96,8 +96,8 @@ func ValidateKey(metric_id string, version metricVersion) error {
 		if !strings.HasPrefix(metric_id, "unit_is_") && !strings.Contains(metric_id, ".unit_is_") {
 			return errNoUnit
 		}
-		if !strings.HasPrefix(metric_id, "target_type_is_") && !strings.Contains(metric_id, ".target_type_is_") {
-			return errNoTargetType
+		if !strings.HasPrefix(metric_id, "mtype_is_") && !strings.Contains(metric_id, ".mtype_is_") {
+			return errNoMType
 		}
 	}
 	if strings.Count(metric_id, ".") < 2 {
@@ -113,13 +113,13 @@ var (
 	m20Is        = []byte("_is_")
 	m20UnitPre   = []byte("unit=")
 	m20UnitMid   = []byte(".unit=")
-	m20TTPre     = []byte("target_type=")
-	m20TTMid     = []byte(".target_type=")
+	m20MTPre     = []byte("mtype=")
+	m20MTMid     = []byte(".mtype=")
 	m20NEIS      = []byte("=")
 	m20NEUnitPre = []byte("unit_is_")
 	m20NEUnitMid = []byte(".unit_is_")
-	m20NETTPre   = []byte("target_type_is_")
-	m20NETTMid   = []byte(".target_type_is_")
+	m20NEMTPre   = []byte("mtype_is_")
+	m20NEMTMid   = []byte(".mtype_is_")
 	dot          = []byte(".")
 )
 
@@ -142,8 +142,8 @@ func ValidateKeyB(metric_id []byte, version metricVersion, legacyValidation Lega
 			if !bytes.HasPrefix(metric_id, m20UnitPre) && !bytes.Contains(metric_id, m20UnitMid) {
 				return errNoUnit
 			}
-			if !bytes.HasPrefix(metric_id, m20TTPre) && !bytes.Contains(metric_id, m20TTMid) {
-				return errNoTargetType
+			if !bytes.HasPrefix(metric_id, m20MTPre) && !bytes.Contains(metric_id, m20MTMid) {
+				return errNoMType
 			}
 		} else { //version == M20NoEquals
 			if bytes.Contains(metric_id, m20NEIS) {
@@ -152,8 +152,8 @@ func ValidateKeyB(metric_id []byte, version metricVersion, legacyValidation Lega
 			if !bytes.HasPrefix(metric_id, m20NEUnitPre) && !bytes.Contains(metric_id, m20NEUnitMid) {
 				return errNoUnit
 			}
-			if !bytes.HasPrefix(metric_id, m20NETTPre) && !bytes.Contains(metric_id, m20NETTMid) {
-				return errNoTargetType
+			if !bytes.HasPrefix(metric_id, m20NEMTPre) && !bytes.Contains(metric_id, m20NEMTMid) {
+				return errNoMType
 			}
 		}
 		if bytes.Count(metric_id, dot) < 2 {

@@ -17,9 +17,9 @@ func TestValidate(t *testing.T) {
 		VersionCase{"foo.bar.aunit=no.baz", M20, false},
 		VersionCase{"foo.bar.UNIT=no.baz", M20, false},
 		VersionCase{"foo.bar.unita=no.bar", M20, false},
-		VersionCase{"foo.bar.target_type_is_count.baz", M20NoEquals, false},
-		VersionCase{"foo.bar.target_type_is_count", M20NoEquals, false},
-		VersionCase{"target_type_is_count.foo.bar", M20NoEquals, false},
+		VersionCase{"foo.bar.mtype_is_count.baz", M20NoEquals, false},
+		VersionCase{"foo.bar.mtype_is_count", M20NoEquals, false},
+		VersionCase{"mtype_is_count.foo.bar", M20NoEquals, false},
 	}
 	for _, c := range cases {
 		version := GetVersion(c.in)
@@ -55,9 +55,9 @@ func TestByteValidation(t *testing.T) {
 		VersionCaseB{"foo.bar.aunit=no.baz", M20, Strict, false},
 		VersionCaseB{"foo.bar.UNIT=no.baz", M20, Strict, false},
 		VersionCaseB{"foo.bar.unita=no.bar", M20, None, false},
-		VersionCaseB{"foo.bar.target_type_is_count.baz", M20NoEquals, Medium, false},
-		VersionCaseB{"foo.bar.target_type_is_count", M20NoEquals, None, false},
-		VersionCaseB{"target_type_is_count.foo.bar", M20NoEquals, Strict, false},
+		VersionCaseB{"foo.bar.mtype_is_count.baz", M20NoEquals, Medium, false},
+		VersionCaseB{"foo.bar.mtype_is_count", M20NoEquals, None, false},
+		VersionCaseB{"mtype_is_count.foo.bar", M20NoEquals, Strict, false},
 	}
 	for _, c := range cases {
 		version := GetVersion(c.in)
@@ -77,7 +77,7 @@ func TestDeriveCount(t *testing.T) {
 		Case{"foo.bar.unit=yes.baz", "foo.bar.unit=yesps.baz"},
 		Case{"foo.bar.unit=yes", "foo.bar.unit=yesps"},
 		Case{"unit=yes.foo.bar", "unit=yesps.foo.bar"},
-		Case{"target_type=count.foo.unit=ok.bar", "target_type=rate.foo.unit=okps.bar"},
+		Case{"mtype=count.foo.unit=ok.bar", "mtype=rate.foo.unit=okps.bar"},
 	}
 	for _, c := range cases {
 		assert.Equal(t, DeriveCount(c.in, "prefix.", false), c.out)
@@ -101,7 +101,7 @@ func TestStat(t *testing.T) {
 		Case{"foo.bar.unit=yes.baz", "foo.bar.unit=yes.baz.stat=max_90"},
 		Case{"foo.bar.unit=yes", "foo.bar.unit=yes.stat=max_90"},
 		Case{"unit=yes.foo.bar", "unit=yes.foo.bar.stat=max_90"},
-		Case{"target_type=count.foo.unit=ok.bar", "target_type=count.foo.unit=ok.bar.stat=max_90"},
+		Case{"mtype=count.foo.unit=ok.bar", "mtype=count.foo.unit=ok.bar.stat=max_90"},
 	}
 	for _, c := range cases {
 		assert.Equal(t, Max(c.in, "prefix.", "90", ""), c.out)
@@ -122,13 +122,13 @@ func TestRateCountPckt(t *testing.T) {
 		Case{"foo.bar.unit=yes.baz", "foo.bar.unit=Pckt.baz.orig_unit=yes.pckt_type=sent.direction=in"},
 		Case{"foo.bar.unit=yes", "foo.bar.unit=Pckt.orig_unit=yes.pckt_type=sent.direction=in"},
 		Case{"unit=yes.foo.bar", "unit=Pckt.foo.bar.orig_unit=yes.pckt_type=sent.direction=in"},
-		Case{"target_type=count.foo.unit=ok.bar", "target_type=count.foo.unit=Pckt.bar.orig_unit=ok.pckt_type=sent.direction=in"},
+		Case{"mtype=count.foo.unit=ok.bar", "mtype=count.foo.unit=Pckt.bar.orig_unit=ok.pckt_type=sent.direction=in"},
 	}
 	for _, c := range cases {
 		assert.Equal(t, CountPckt(c.in, "prefix."), c.out)
 		c = Case{
 			c.in,
-			strings.Replace(strings.Replace(c.out, "unit=Pckt", "unit=Pcktps", -1), "target_type=count", "target_type=rate", -1),
+			strings.Replace(strings.Replace(c.out, "unit=Pckt", "unit=Pcktps", -1), "mtype=count", "mtype=rate", -1),
 		}
 		assert.Equal(t, RatePckt(c.in, "prefix."), c.out)
 	}
@@ -140,7 +140,7 @@ func TestRateCountPckt(t *testing.T) {
 		assert.Equal(t, CountPckt(c.in, "prefix."), c.out)
 		c = Case{
 			c.in,
-			strings.Replace(strings.Replace(c.out, "unit_is_Pckt", "unit_is_Pcktps", -1), "target_type_is_count", "target_type_is_rate", -1),
+			strings.Replace(strings.Replace(c.out, "unit_is_Pckt", "unit_is_Pcktps", -1), "mtype_is_count", "mtype_is_rate", -1),
 		}
 		assert.Equal(t, RatePckt(c.in, "prefix."), c.out)
 	}

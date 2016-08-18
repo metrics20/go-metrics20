@@ -10,11 +10,11 @@ func TestGetVersionB(t *testing.T) {
 		v  metricVersion
 	}{
 		{
-			[]byte("service=carbon.instance=foo.unit=Err.target_type=gauge.type=cache_overflow"),
+			[]byte("service=carbon.instance=foo.unit=Err.mtype=gauge.type=cache_overflow"),
 			M20,
 		},
 		{
-			[]byte("service_is_carbon.instance_is_foo.unit_is_Err.target_type_is_gauge.type_is_cache_overflow"),
+			[]byte("service_is_carbon.instance_is_foo.unit_is_Err.mtype_is_gauge.type_is_cache_overflow"),
 			M20NoEquals,
 		},
 		{
@@ -35,14 +35,14 @@ func TestGetVersionB(t *testing.T) {
 }
 
 func BenchmarkGetVersionBM20(b *testing.B) {
-	in := []byte("service=carbon.instance=foo.unit=Err.target_type=gauge.type=cache_overflow")
+	in := []byte("service=carbon.instance=foo.unit=Err.mtype=gauge.type=cache_overflow")
 	for i := 0; i < b.N; i++ {
 		GetVersionB(in)
 	}
 }
 
 func BenchmarkGetVersionBM20NoEquals(b *testing.B) {
-	in := []byte("service_is_carbon.instance_is_foo.unit_is_Err.target_type_is_gauge.type_is_cache_overflow")
+	in := []byte("service_is_carbon.instance_is_foo.unit_is_Err.mtype_is_gauge.type_is_cache_overflow")
 	for i := 0; i < b.N; i++ {
 		GetVersionB(in)
 	}
