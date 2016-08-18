@@ -70,35 +70,38 @@ func validateNotNullAsciiChars(metric_id []byte) error {
 }
 
 // ValidateKey checks the basic form of metric keys
-func ValidateKey(metric_id string, version metricVersion) error {
-	if version == Legacy {
-		// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
-		// in practice, graphite alters (removes a dot) the metric id when this happens:
-		if strings.Contains(metric_id, "..") {
-			return errEmptyNode
-		}
-		return ValidateSensibleChars(metric_id)
+func ValidateKeyLegacy(metric_id string) error {
+	// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
+	// in practice, graphite alters (removes a dot) the metric id when this happens:
+	if strings.Contains(metric_id, "..") {
+		return errEmptyNode
 	}
-	if version == M20 {
-		if strings.Contains(metric_id, "_is_") {
-			return errMixEqualsTypes
-		}
-		if !strings.HasPrefix(metric_id, "unit=") && !strings.Contains(metric_id, ".unit=") {
-			return errNoUnit
-		}
-		if !strings.HasPrefix(metric_id, "mtype=") && !strings.Contains(metric_id, ".mtype=") {
-			return errNoMType
-		}
-	} else { //version == M20NoEquals
-		if strings.Contains(metric_id, "=") {
-			return errMixEqualsTypes
-		}
-		if !strings.HasPrefix(metric_id, "unit_is_") && !strings.Contains(metric_id, ".unit_is_") {
-			return errNoUnit
-		}
-		if !strings.HasPrefix(metric_id, "mtype_is_") && !strings.Contains(metric_id, ".mtype_is_") {
-			return errNoMType
-		}
+	return ValidateSensibleChars(metric_id)
+}
+func ValidateKeyM20(metric_id string) error {
+	if strings.Contains(metric_id, "_is_") {
+		return errMixEqualsTypes
+	}
+	if !strings.HasPrefix(metric_id, "unit=") && !strings.Contains(metric_id, ".unit=") {
+		return errNoUnit
+	}
+	if !strings.HasPrefix(metric_id, "mtype=") && !strings.Contains(metric_id, ".mtype=") {
+		return errNoMType
+	}
+	if strings.Count(metric_id, ".") < 2 {
+		return errNotEnoughTags
+	}
+	return nil
+}
+func ValidateKeyM20NoEquals(metric_id string) error {
+	if strings.Contains(metric_id, "=") {
+		return errMixEqualsTypes
+	}
+	if !strings.HasPrefix(metric_id, "unit_is_") && !strings.Contains(metric_id, ".unit_is_") {
+		return errNoUnit
+	}
+	if !strings.HasPrefix(metric_id, "mtype_is_") && !strings.Contains(metric_id, ".mtype_is_") {
+		return errNoMType
 	}
 	if strings.Count(metric_id, ".") < 2 {
 		return errNotEnoughTags
@@ -124,41 +127,44 @@ var (
 )
 
 // ValidateKeyB is like ValidateKey but for byte array inputs.
-func ValidateKeyB(metric_id []byte, version metricVersion, legacyValidation LegacyMetricValidation) error {
-	if version == Legacy {
-		if legacyValidation == Strict {
-			if bytes.Contains(metric_id, doubleDot) {
-				return errEmptyNode
-			}
-			return ValidateSensibleCharsB(metric_id)
-		} else if legacyValidation == Medium {
-			return validateNotNullAsciiChars(metric_id)
+func ValidateKeyLegacyB(metric_id []byte, legacyValidation LegacyMetricValidation) error {
+	if legacyValidation == Strict {
+		if bytes.Contains(metric_id, doubleDot) {
+			return errEmptyNode
 		}
-	} else {
-		if version == M20 {
-			if bytes.Contains(metric_id, m20Is) {
-				return errMixEqualsTypes
-			}
-			if !bytes.HasPrefix(metric_id, m20UnitPre) && !bytes.Contains(metric_id, m20UnitMid) {
-				return errNoUnit
-			}
-			if !bytes.HasPrefix(metric_id, m20MTPre) && !bytes.Contains(metric_id, m20MTMid) {
-				return errNoMType
-			}
-		} else { //version == M20NoEquals
-			if bytes.Contains(metric_id, m20NEIS) {
-				return errMixEqualsTypes
-			}
-			if !bytes.HasPrefix(metric_id, m20NEUnitPre) && !bytes.Contains(metric_id, m20NEUnitMid) {
-				return errNoUnit
-			}
-			if !bytes.HasPrefix(metric_id, m20NEMTPre) && !bytes.Contains(metric_id, m20NEMTMid) {
-				return errNoMType
-			}
-		}
-		if bytes.Count(metric_id, dot) < 2 {
-			return errNotEnoughTags
-		}
+		return ValidateSensibleCharsB(metric_id)
+	} else if legacyValidation == Medium {
+		return validateNotNullAsciiChars(metric_id)
+	}
+	return nil
+}
+func ValidateKeyM20B(metric_id []byte) error {
+	if bytes.Contains(metric_id, m20Is) {
+		return errMixEqualsTypes
+	}
+	if !bytes.HasPrefix(metric_id, m20UnitPre) && !bytes.Contains(metric_id, m20UnitMid) {
+		return errNoUnit
+	}
+	if !bytes.HasPrefix(metric_id, m20MTPre) && !bytes.Contains(metric_id, m20MTMid) {
+		return errNoMType
+	}
+	if bytes.Count(metric_id, dot) < 2 {
+		return errNotEnoughTags
+	}
+	return nil
+}
+func ValidateKeyM20NoEqualsB(metric_id []byte) error {
+	if bytes.Contains(metric_id, m20NEIS) {
+		return errMixEqualsTypes
+	}
+	if !bytes.HasPrefix(metric_id, m20NEUnitPre) && !bytes.Contains(metric_id, m20NEUnitMid) {
+		return errNoUnit
+	}
+	if !bytes.HasPrefix(metric_id, m20NEMTPre) && !bytes.Contains(metric_id, m20NEMTMid) {
+		return errNoMType
+	}
+	if bytes.Count(metric_id, dot) < 2 {
+		return errNotEnoughTags
 	}
 	return nil
 }
@@ -174,7 +180,14 @@ func ValidatePacket(buf []byte, legacyValidation LegacyMetricValidation) ([]byte
 	}
 
 	version := GetVersionB(fields[0])
-	err := ValidateKeyB(fields[0], version, legacyValidation)
+	var err error
+	if version == Legacy {
+		err = ValidateKeyLegacyB(fields[0], legacyValidation)
+	} else if version == M20 {
+		err = ValidateKeyM20B(fields[0])
+	} else { // version == M20NoEquals
+		err = ValidateKeyM20NoEqualsB(fields[0])
+	}
 	if err != nil {
 		return empty, 0, 0, err
 	}
