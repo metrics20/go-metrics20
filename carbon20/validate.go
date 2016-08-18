@@ -8,11 +8,20 @@ import (
 	"strings"
 )
 
-var errTooManyEquals = errors.New("bad metric spec: more than 1 equals")
-var errKeyOrValEmpty = errors.New("bad metric spec: tag_k and tag_v must be non-empty strings")
+var errTooManyEquals = errors.New("more than 1 equals")
+var errKeyOrValEmpty = errors.New("tag_k and tag_v must be non-empty strings")
 var errWrongNumFields = errors.New("packet must consist of 3 fields")
 var errValNotNumber = errors.New("value field is not a float or int")
 var errTsNotTs = errors.New("timestamp field is not a unix timestamp")
+var errEmptyNode = errors.New("empty node")
+var errMixEqualsTypes = errors.New("both = and _is_")
+var errNoUnit = errors.New("no unit tag")
+var errNoTargetType = errors.New("no target_type tag")
+var errNotEnoughTags = errors.New("must have at least 1 tag beyond unit and target_type")
+
+var errFmtNullAt = "null byte at position %d"
+var errFmtIllegalChar = "illegal char %q"
+var errFmtNonAsciiChar = "non-ASCII char %q"
 
 // LegacyMetricValidation indicates the level of validation to undertake for legacy metrics
 //go:generate stringer -type=LegacyMetricValidation
@@ -30,7 +39,7 @@ const (
 func ValidateSensibleChars(metric_id string) error {
 	for _, ch := range metric_id {
 		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
-			return fmt.Errorf("metric '%s' contains illegal char '%s'", metric_id, string(ch))
+			return fmt.Errorf(errFmtIllegalChar, ch)
 		}
 	}
 	return nil
@@ -40,7 +49,7 @@ func ValidateSensibleChars(metric_id string) error {
 func ValidateSensibleCharsB(metric_id []byte) error {
 	for _, ch := range metric_id {
 		if !(ch >= 'a' && ch <= 'z') && !(ch >= 'A' && ch <= 'Z') && !(ch >= '0' && ch <= '9') && ch != '_' && ch != '-' && ch != '.' {
-			return fmt.Errorf("metric '%s' contains illegal char '%s'", string(metric_id), string(ch))
+			return fmt.Errorf(errFmtIllegalChar, ch)
 		}
 	}
 	return nil
@@ -51,10 +60,10 @@ func ValidateSensibleCharsB(metric_id []byte) error {
 func validateNotNullAsciiChars(metric_id []byte) error {
 	for i, ch := range metric_id {
 		if ch == 0 {
-			return fmt.Errorf("metric '%s' has an embedded NULL byte at position %d", i)
+			return fmt.Errorf(errFmtNullAt, i)
 		}
 		if ch&0x80 != 0 {
-			return fmt.Errorf("metric '%s' contains non-ASCII byte '%q'", string(metric_id), ch)
+			return fmt.Errorf(errFmtNonAsciiChar, ch)
 		}
 	}
 	return nil
@@ -66,33 +75,33 @@ func InitialValidation(metric_id string, version metricVersion) error {
 		// if the metric contains no = or _is_, in theory we don't really care what it does contain.  it can be whatever.
 		// in practice, graphite alters (removes a dot) the metric id when this happens:
 		if strings.Contains(metric_id, "..") {
-			return fmt.Errorf("metric '%s' has an empty node", metric_id)
+			return errEmptyNode
 		}
 		return ValidateSensibleChars(metric_id)
 	}
 	if version == M20 {
 		if strings.Contains(metric_id, "_is_") {
-			return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
+			return errMixEqualsTypes
 		}
 		if !strings.HasPrefix(metric_id, "unit=") && !strings.Contains(metric_id, ".unit=") {
-			return fmt.Errorf("metric '%s' has no unit tag", metric_id)
+			return errNoUnit
 		}
 		if !strings.HasPrefix(metric_id, "target_type=") && !strings.Contains(metric_id, ".target_type=") {
-			return fmt.Errorf("metric '%s' has no target_type tag", metric_id)
+			return errNoTargetType
 		}
 	} else { //version == M20NoEquals
 		if strings.Contains(metric_id, "=") {
-			return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
+			return errMixEqualsTypes
 		}
 		if !strings.HasPrefix(metric_id, "unit_is_") && !strings.Contains(metric_id, ".unit_is_") {
-			return fmt.Errorf("metric '%s' has no unit tag", metric_id)
+			return errNoUnit
 		}
 		if !strings.HasPrefix(metric_id, "target_type_is_") && !strings.Contains(metric_id, ".target_type_is_") {
-			return fmt.Errorf("metric '%s' has no target_type tag", metric_id)
+			return errNoTargetType
 		}
 	}
 	if strings.Count(metric_id, ".") < 2 {
-		return fmt.Errorf("metric '%s': must have at least one tag_k/tag_v pair beyond unit and target_type", metric_id)
+		return errNotEnoughTags
 	}
 	return nil
 }
@@ -119,7 +128,7 @@ func InitialValidationB(metric_id []byte, version metricVersion, legacyValidatio
 	if version == Legacy {
 		if legacyValidation == Strict {
 			if bytes.Contains(metric_id, doubleDot) {
-				return fmt.Errorf("metric '%s' has an empty node", metric_id)
+				return errEmptyNode
 			}
 			return ValidateSensibleCharsB(metric_id)
 		} else if legacyValidation == Medium {
@@ -128,27 +137,27 @@ func InitialValidationB(metric_id []byte, version metricVersion, legacyValidatio
 	} else {
 		if version == M20 {
 			if bytes.Contains(metric_id, m20Is) {
-				return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
+				return errMixEqualsTypes
 			}
 			if !bytes.HasPrefix(metric_id, m20UnitPre) && !bytes.Contains(metric_id, m20UnitMid) {
-				return fmt.Errorf("metric '%s' has no unit tag", metric_id)
+				return errNoUnit
 			}
 			if !bytes.HasPrefix(metric_id, m20TTPre) && !bytes.Contains(metric_id, m20TTMid) {
-				return fmt.Errorf("metric '%s' has no target_type tag", metric_id)
+				return errNoTargetType
 			}
 		} else { //version == M20NoEquals
 			if bytes.Contains(metric_id, m20NEIS) {
-				return fmt.Errorf("metric '%s' has both = and _is_", metric_id)
+				return errMixEqualsTypes
 			}
 			if !bytes.HasPrefix(metric_id, m20NEUnitPre) && !bytes.Contains(metric_id, m20NEUnitMid) {
-				return fmt.Errorf("metric '%s' has no unit tag", metric_id)
+				return errNoUnit
 			}
 			if !bytes.HasPrefix(metric_id, m20NETTPre) && !bytes.Contains(metric_id, m20NETTMid) {
-				return fmt.Errorf("metric '%s' has no target_type tag", metric_id)
+				return errNoTargetType
 			}
 		}
 		if bytes.Count(metric_id, dot) < 2 {
-			return fmt.Errorf("metric '%s': must have at least one tag_k/tag_v pair beyond unit and target_type", metric_id)
+			return errNotEnoughTags
 		}
 	}
 	return nil
