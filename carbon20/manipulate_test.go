@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+var out string
+
 type Case struct {
 	in  string
 	out string
@@ -86,12 +88,26 @@ func TestRateCountPckt(t *testing.T) {
 	}
 }
 
-func Benchmark5DeriveCounts(b *testing.B) {
+func BenchmarkDeriveCountsM20Bare(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		DeriveCount("foo.bar.unit=yes.baz", "prefix.", false)
-		DeriveCount("foo.bar.unit=yes", "prefix.", false)
-		DeriveCount("unit=yes.foo.bar", "prefix.", false)
-		DeriveCount("foo.bar.unita=no.bar", "prefix.", false)
-		DeriveCount("foo.bar.aunit=no.baz", "prefix.", false)
+		out = DeriveCount("foo=bar", "prefix-m1.", false)
+	}
+}
+
+func BenchmarkDeriveCountsM20Proper(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		out = DeriveCount("foo=bar.unit=yes.mtype=count", "prefix-m1.", false)
+	}
+}
+
+func BenchmarkDeriveCountsM20NoEqualsBare(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		out = DeriveCount("foo_is_bar", "prefix-m1.", false)
+	}
+}
+
+func BenchmarkDeriveCountsM20NoEqualsProper(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		out = DeriveCount("foo_is_bar.unit_is_yes.mtype_is_count", "prefix-m1.", false)
 	}
 }

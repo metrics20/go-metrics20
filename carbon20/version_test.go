@@ -6,6 +6,8 @@ import (
 	"github.com/bmizerany/assert"
 )
 
+var version metricVersion
+
 func TestValidate(t *testing.T) {
 	cases := []struct {
 		in      string
@@ -71,21 +73,27 @@ func TestGetVersionB(t *testing.T) {
 
 func BenchmarkGetVersionBM20(b *testing.B) {
 	in := []byte("service=carbon.instance=foo.unit=Err.mtype=gauge.type=cache_overflow")
+	var v metricVersion
 	for i := 0; i < b.N; i++ {
-		GetVersionB(in)
+		v = GetVersionB(in)
 	}
+	version = v
 }
 
 func BenchmarkGetVersionBM20NoEquals(b *testing.B) {
 	in := []byte("service_is_carbon.instance_is_foo.unit_is_Err.mtype_is_gauge.type_is_cache_overflow")
+	var v metricVersion
 	for i := 0; i < b.N; i++ {
-		GetVersionB(in)
+		v = GetVersionB(in)
 	}
+	version = v
 }
 
 func BenchmarkGetVersionBLegacy(b *testing.B) {
 	in := []byte("carbon.agents.foo.cache.overflow")
+	var v metricVersion
 	for i := 0; i < b.N; i++ {
-		GetVersionB(in)
+		v = GetVersionB(in)
 	}
+	version = v
 }
