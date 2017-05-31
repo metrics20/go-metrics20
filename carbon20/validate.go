@@ -224,12 +224,12 @@ func ValidatePacket(buf []byte, levelLegacy ValidationLevelLegacy, levelM20 Vali
 		return fields[0], 0, 0, err
 	}
 
-	val, err := strconv.ParseFloat(string(fields[1]), 32)
+	val, err := strconv.ParseFloat(string(fields[1]), 64)
 	if err != nil {
 		return fields[0], 0, 0, errValNotNumber
 	}
 
-	ts, err := strconv.ParseUint(string(fields[2]), 10, 0)
+	ts, err := strconv.ParseFloat(string(fields[2]), 64)
 	if err != nil {
 		return fields[0], 0, 0, errTsNotTs
 	}

@@ -2,6 +2,7 @@ package carbon20
 
 import (
 	"testing"
+	"math"
 
 	"github.com/bmizerany/assert"
 )
@@ -33,6 +34,53 @@ func TestValidateLegacy(t *testing.T) {
 		assert.Equal(t, ValidateKeyLegacyB([]byte(c.in), c.level) == nil, c.valid)
 	}
 }
+
+func TestValidateTimestamps(t *testing.T) {
+	cases := []struct {
+		in    string
+		valid bool
+	}{
+		{"foo.bar 1 123", true},
+		{"foo.bar 1 123.0", true},
+		{"foo.bar 1 123abc", false},
+	}
+
+	for _, c := range cases {
+		_, _, _, err := ValidatePacket([]byte(c.in), NoneLegacy, NoneM20)
+		valid := err == nil
+		if valid != c.valid {
+			t.Errorf("in='%s' valid=%v, expected %v", c.in, valid, c.valid)
+		}
+	}
+}
+
+func TestValidateValues(t *testing.T) {
+	cases := []struct {
+		in    string
+		value float64
+		valid bool
+	}{
+		{"foo.bar -1 123", -1, true},
+		{"foo.bar 1e5 123", 1e5, true},
+		{"foo.bar 1E+5 123", 1e5, true},
+		{"foo.bar +1E-5 123", 1e-5, true},
+		{"foo.bar 1e100 123", 1e100, true},
+		{"foo.bar z1 123", 0, false},
+		{"foo.bar ++1 123", 0, false},
+	}
+
+	for _, c := range cases {
+		_, val, _, err := ValidatePacket([]byte(c.in), NoneLegacy, NoneM20)
+		valid := err == nil
+		if valid != c.valid {
+			t.Errorf("in='%s' valid=%v, expected %v", c.in, valid, c.valid)
+		}
+		if math.Abs(val - c.value) > 0.0001 {
+			t.Errorf("in='%s', value=%v, expected %v", c.in, val, c.value)
+		}
+	}
+}
+
 
 func TestValidateM20(t *testing.T) {
 	cases := []struct {
