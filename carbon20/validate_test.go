@@ -1,8 +1,8 @@
 package carbon20
 
 import (
-	"testing"
 	"math"
+	"testing"
 
 	"github.com/bmizerany/assert"
 )
@@ -75,12 +75,11 @@ func TestValidateValues(t *testing.T) {
 		if valid != c.valid {
 			t.Errorf("in='%s' valid=%v, expected %v", c.in, valid, c.valid)
 		}
-		if math.Abs(val - c.value) > 0.0001 {
+		if math.Abs(val-c.value) > 0.0001 {
 			t.Errorf("in='%s', value=%v, expected %v", c.in, val, c.value)
 		}
 	}
 }
-
 
 func TestValidateM20(t *testing.T) {
 	cases := []struct {
