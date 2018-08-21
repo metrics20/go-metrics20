@@ -1,8 +1,8 @@
 package carbon20
 
 import (
-	"testing"
 	"math"
+	"testing"
 
 	"github.com/bmizerany/assert"
 )
@@ -28,10 +28,44 @@ func TestValidateLegacy(t *testing.T) {
 		{"foo..bar.b\x00z", StrictLegacy, false},
 		{"foo..bar.b\x00z", MediumLegacy, false},
 		{"foo..bar.b\x00z", NoneLegacy, true},
+
+		// now some tag test cases.
+		// note that we have a dedicated function to test
+		// the just tag appendices.
+		// but here we're more interested in the "overall"
+		// behavior
+		{"foo.bar;", StrictLegacy, false},
+		{"foo.bar;", MediumLegacy, false},
+		{"foo.bar;", NoneLegacy, true},
+		{"foo.bar;k", StrictLegacy, false},
+		{"foo.bar;k", MediumLegacy, false},
+		{"foo.bar;k", NoneLegacy, true},
+		{"foo.bar;k=", StrictLegacy, false},
+		{"foo.bar;k=", MediumLegacy, false},
+		{"foo.bar;k=", NoneLegacy, true},
+		{"foo.bar;k=v", StrictLegacy, true},
+		{"foo.bar;k=v", MediumLegacy, true},
+		{"foo.bar;k=v", NoneLegacy, true},
+		{"foo.bar;k!=v", StrictLegacy, false},
+		{"foo.bar;k!=v", MediumLegacy, false},
+		{"foo.bar;k!=v", NoneLegacy, true},
+		// non-ascii also not allowed in tag appendix
+		{"foo.bar;k=\xbdz", StrictLegacy, false},
+		{"foo.bar;k=\xbdz", MediumLegacy, false},
+		{"foo.bar;k=\xbdz", NoneLegacy, true},
+		{"foo.bar;k=\x00z", StrictLegacy, false},
+		{"foo.bar;k=\x00z", MediumLegacy, false},
+		{"foo.bar;k=\x00z", NoneLegacy, true},
 	}
-	for _, c := range cases {
-		assert.Equal(t, ValidateKeyLegacy(c.in, c.level) == nil, c.valid)
-		assert.Equal(t, ValidateKeyLegacyB([]byte(c.in), c.level) == nil, c.valid)
+	for i, c := range cases {
+		err := ValidateKeyLegacy(c.in, c.level)
+		if (err == nil) != c.valid {
+			t.Fatalf("test %d: ValidateKeyLegacy(%q,%v): expected valid=%t, got err=%v", i, c.in, c.level, c.valid, err)
+		}
+		err = ValidateKeyLegacyB([]byte(c.in), c.level)
+		if (err == nil) != c.valid {
+			t.Fatalf("test %d: ValidateKeyLegacyB(%q,%v): expected valid=%t, got err=%v", i, c.in, c.level, c.valid, err)
+		}
 	}
 }
 
@@ -75,12 +109,11 @@ func TestValidateValues(t *testing.T) {
 		if valid != c.valid {
 			t.Errorf("in='%s' valid=%v, expected %v", c.in, valid, c.valid)
 		}
-		if math.Abs(val - c.value) > 0.0001 {
+		if math.Abs(val-c.value) > 0.0001 {
 			t.Errorf("in='%s', value=%v, expected %v", c.in, val, c.value)
 		}
 	}
 }
-
 
 func TestValidateM20(t *testing.T) {
 	cases := []struct {
@@ -116,6 +149,35 @@ func TestValidateM20NoEquals(t *testing.T) {
 	for _, c := range cases {
 		assert.Equal(t, ValidateKeyM20NoEquals(c.in, c.level) == nil, c.valid)
 		assert.Equal(t, ValidateKeyM20NoEqualsB([]byte(c.in), c.level) == nil, c.valid)
+	}
+}
+
+func TestValidateTagAppendixB(t *testing.T) {
+	cases := []struct {
+		in    string
+		valid bool
+	}{
+		{";k=v", true},
+		{";123456=89710", true},
+		{";k=v;k2=v2", true},
+		{";k=v;;k2=v2", false},
+		{";!=v", false},
+		{";k!=v", false},
+		{";!k=v", false},
+		{";k=v;", false},
+		{";k=v;=", false},
+		{";k=v;k2=", false},
+		{";k=", false},
+		{";k=v;k2=", false},
+		{";;k=v", false},
+		{";k=v=", false},
+		{";k=v;k2==v2", false},
+	}
+	for _, c := range cases {
+		err := ValidateTagAppendixB([]byte(c.in))
+		if (err == nil) != c.valid {
+			t.Fatalf("case %q : expected valid=%t, got err=%s", c.in, c.valid, err)
+		}
 	}
 }
 
