@@ -1,3 +1,4 @@
+** project inactive. please look at opentelemetry instead **
 ## go-metrics20
 
 helper functions to detect metric format and convey operations by modifying tag data. 
